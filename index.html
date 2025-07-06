@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qualitative Analysis Lab Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Visualization & Content Choices:
+        - Report Info: Report Metadata (Date, Exp No, Name) -> Goal: Inform -> Presentation: Header text -> Interaction: None -> Justification: Standard report identification.
+        - Report Info: Objectives, Introduction, Theoretical Principles -> Goal: Inform -> Presentation: Text within collapsible sections -> Interaction: Click to expand/collapse -> Justification: Manages information density, allows users to focus on specific introductory parts.
+        - Report Info: Anion Analysis - Preparation of Solution -> Goal: Inform -> Presentation: Step-by-step text in a collapsible section -> Interaction: Click to expand/collapse -> Justification: Clear procedural steps, collapsible for brevity.
+        - Report Info: Anion Analysis - Colour of Solution -> Goal: Inform -> Presentation: Static text block -> Interaction: None -> Justification: Observational detail.
+        - Report Info: Anion Analysis - Specific Tests (e.g., Carbonate/Sulfite) -> Goal: Explore/Learn -> Presentation: Grid of buttons for each test. Clicking a button opens a modal with Test Name, Reagents, Procedure, Expected Positive Result (using Unicode icons like ↓ for precipitate, ↑ for gas) -> Interaction: Click to open modal -> Justification: Focused learning on individual tests, avoids cluttering main page.
+        - Report Info: Cation Analysis - Flame Test -> Goal: Explore/Learn -> Presentation: Interactive grid. Each cell shows a flame color description. Clicking it reveals the cation in a tooltip/small popup. -> Interaction: Click/Hover on grid cells -> Justification: Interactive way to learn characteristic flame colors.
+        - Report Info: Cation Analysis - Preparation of Solution -> Goal: Inform -> Presentation: Step-by-step text in a collapsible section -> Interaction: Click to expand/collapse -> Justification: Clear procedural steps.
+        - Report Info: Cation Analysis - Separation of Cations into Major Groups -> Goal: Explore/Understand -> Presentation: Interactive diagram using HTML/CSS (Tailwind for styling divs as a flowchart). Clicking a group box highlights it and displays details (precipitating reagent, ions) in a side panel or modal. -> Interaction: Click on group boxes -> Justification: Visual and interactive method to understand the complex separation scheme.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. Chart.js/Plotly not required. Unicode characters (e.g., 🧪 🔥 ↓ ↑) for simple visual cues. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF6; color: #3C3633; }
+        .sticky-nav { position: sticky; top: 0; z-index: 50; background-color: #FDFBF6; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-link { transition: color 0.3s ease; }
+        .nav-link:hover { color: #7A9E9F; }
+        .content-section { margin-bottom: 2rem; padding: 1.5rem; background-color: #FFFFFF; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .section-title { color: #7A9E9F; border-bottom: 2px solid #E0E0E0; padding-bottom: 0.5rem; margin-bottom: 1rem; font-weight: 600;}
+        .collapsible-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; font-weight: 500;}
+        .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .collapsible-content.open { max-height: 2000px; /* Adjust as needed */ }
+        .arrow { transition: transform 0.3s ease; }
+        .arrow.open { transform: rotate(90deg); }
+        .test-button { background-color: #7A9E9F; color: white; transition: background-color 0.3s ease; }
+        .test-button:hover { background-color: #688F8F; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #FFFFFF; margin: 10% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 600px; position: relative; }
+        .close-button { position: absolute; top: 10px; right: 20px; font-size: 24px; font-weight: bold; cursor: pointer; }
+        .flame-grid-item { border: 1px solid #E0E0E0; padding: 1rem; text-align: center; cursor: pointer; transition: background-color 0.3s; }
+        .flame-grid-item:hover { background-color: #f0f0f0; }
+        .cation-group-diagram div { border: 1px solid #7A9E9F; padding: 0.5rem; margin: 0.25rem; text-align: center; cursor: pointer; }
+        .cation-group-diagram .group-box:hover { background-color: #E0E7E7; }
+        .highlighted-group { background-color: #A8DADC !important; color: #1D3557 !important; border-width: 2px !important; border-color: #457B9D !important; }
+        h1, h2, h3 { font-weight: 600; }
+        ul { list-style-position: inside; }
+        li { margin-bottom: 0.25rem; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="py-6 bg-white shadow-md">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-3xl font-bold text-[#3C3633]">Qualitative Analysis – Anion – Cation Analysis</h1>
+            <p class="text-md text-gray-600 mt-1">Date: 2025/05/22 | Experiment No.: 15</p>
+        </div>
+    </header>
+
+    <nav class="sticky-nav py-3">
+        <div class="container mx-auto px-4 flex justify-center space-x-6">
+            <a href="#overview" class="nav-link text-lg font-medium text-gray-700">Overview</a>
+            <a href="#anion-analysis" class="nav-link text-lg font-medium text-gray-700">Anion Analysis</a>
+            <a href="#cation-analysis" class="nav-link text-lg font-medium text-gray-700">Cation Analysis</a>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <section id="overview" class="content-section">
+            <h2 class="text-2xl section-title">🧪 Overview</h2>
+            <p class="mb-4 text-gray-700">This section provides the foundational information for the experiment, including its objectives, a general introduction to qualitative analysis, and the key theoretical principles that underpin the analytical methods used.</p>
+            
+            <div class="collapsible">
+                <div class="collapsible-header border-b border-gray-200">
+                    <span>Objectives</span>
+                    <span class="arrow text-xl transition-transform duration-300 ease-in-out transform group-hover:rotate-90">&#x276F;</span>
+                </div>
+                <div class="collapsible-content bg-gray-50 p-4 rounded-b-md">
+                    <ul class="list-disc text-gray-700">
+                        <li>To understand the principles of solubility and solubility product.</li>
+                        <li>To learn how to report scientific observations and draw conclusions based on them.</li>
+                        <li>To qualitatively determine the presence of a cation or an anion in a given mixture.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="collapsible mt-2">
+                <div class="collapsible-header border-b border-gray-200">
+                    <span>Introduction</span>
+                    <span class="arrow text-xl transition-transform duration-300 ease-in-out transform group-hover:rotate-90">&#x276F;</span>
+                </div>
+                <div class="collapsible-content bg-gray-50 p-4 rounded-b-md">
+                    <p class="text-gray-700">Qualitative analysis in chemistry focuses on identifying the components of a sample, rather than determining their quantities. This typically involves a series of chemical tests that produce observable changes, such as precipitation, color changes, or gas evolution, which are characteristic of specific ions.</p>
+                    <p class="mt-2 text-gray-700">Anions are negatively charged ions, formed when an atom gains one or more electrons. Common examples include chloride (Cl⁻), sulfate (SO₄²⁻), and nitrate (NO₃⁻). Cations, conversely, are positively charged ions, formed when an atom loses one or more electrons. Examples include sodium (Na⁺), potassium (K⁺), and calcium (Ca²⁺).</p>
+                    <p class="mt-2 text-gray-700">The analysis of anions and cations relies on fundamental chemical principles to systematically separate and identify individual ions within a mixture. These principles ensure that specific tests yield unambiguous results, allowing for accurate identification.</p>
+                </div>
+            </div>
+
+            <div class="collapsible mt-2">
+                <div class="collapsible-header border-b border-gray-200">
+                    <span>Theoretical Principles</span>
+                    <span class="arrow text-xl transition-transform duration-300 ease-in-out transform group-hover:rotate-90">&#x276F;</span>
+                </div>
+                <div class="collapsible-content bg-gray-50 p-4 rounded-b-md">
+                    <p class="text-gray-700">The qualitative analysis of ions is underpinned by several core chemical concepts:</p>
+                    <ul class="list-disc mt-2 text-gray-700">
+                        <li><strong>Solubility Rules:</strong> These rules dictate which ionic compounds are soluble or insoluble in water. By selectively adding reagents that form insoluble precipitates with certain ions, specific ions can be separated from a mixture. The formation of a precipitate is a key indicator of the presence of a particular ion.</li>
+                        <li class="mt-1"><strong>Characteristic Reactions of Ions:</strong> Each ion exhibits unique chemical reactivity with various reagents, leading to distinct observable phenomena. These characteristic reactions, such as the formation of specific colored precipitates, the evolution of gases with particular odors, or unique flame colors, serve as diagnostic tests for the presence of individual ions.</li>
+                        <li class="mt-1"><strong>Selective Precipitation:</strong> This technique involves adding a reagent to a solution that causes only a specific ion or a group of ions to precipitate out, leaving others in solution. By carefully controlling conditions such as pH and reagent concentration, different groups of ions can be separated sequentially. This systematic approach allows for the isolation and subsequent identification of individual ions from complex mixtures.</li>
+                    </ul>
+                    <p class="mt-2 text-gray-700">The general types of tests employed in this analysis include precipitation reactions (↓), flame tests (🔥), and specific reagent tests (🧪).</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="anion-analysis" class="content-section">
+            <h2 class="text-2xl section-title">🔬 Anion Analysis</h2>
+            <p class="mb-4 text-gray-700">This section details the procedures for identifying anions in a sample. It begins with sample preparation, followed by observations of solution color, and then outlines specific chemical tests used to detect the presence of various anions. Click on each test to view its detailed procedure and expected positive results.</p>
+
+            <div class="collapsible">
+                <div class="collapsible-header border-b border-gray-200">
+                    <span>Preparation of Solution for Anion Analysis</span>
+                    <span class="arrow text-xl transition-transform duration-300 ease-in-out transform group-hover:rotate-90">&#x276F;</span>
+                </div>
+                <div class="collapsible-content bg-gray-50 p-4 rounded-b-md">
+                    <p class="text-gray-700">An amount of the sample, approximately 0.01 g (the size of one rice grain), was placed in a test tube. Eight drops of water were added, and the mixture was stirred for 30 seconds. If the solid dissolved completely, the sample was considered soluble in water, and 0.1 g of the sample was dissolved in 5 mL of water to be saved as the <em>water solution</em>.</p>
+                    <p class="mt-2 text-gray-700">If the sample was insoluble in water, an amount of the sample, approximately 5 grains of rice, was placed in a boiling tube. 6 mL of saturated sodium carbonate solution was added, and the mixture was boiled for 5 minutes. The mixture was then filtered, and the clear solution was collected and saved as the <em>test solution</em> (sodium carbonate extract).</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Colour of Solution</h3>
+                <p class="text-gray-700">The color of the solution was observed. Common colored anions such as Chromate (yellow), Dichromate (orange), and Permanganate (purple) were noted as potential components if the solution exhibited these colors. White solid samples or colorless solutions were considered to be free of these specific anionic species.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-3">Specific Tests for Anions</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="anionTestsContainer">
+                </div>
+        </section>
+
+        <section id="cation-analysis" class="content-section">
+            <h2 class="text-2xl section-title">🔥 Cation Analysis</h2>
+            <p class="mb-4 text-gray-700">This section covers the methods used to identify cations. It includes the flame test for certain metal ions, procedures for preparing the sample solution, and a systematic scheme for separating cations into different groups based on their precipitation behavior. Explore the interactive elements to understand these processes.</p>
+
+            <div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Flame Test</h3>
+                <p class="text-gray-700 mb-3">2-3 mg of the substance was placed on a watch glass, and four drops of conc. HCl were added. A Pt wire or pencil tip was dipped into this mixture and inserted into the base of the non-luminous flame. Click on a flame color to see the indicated cation.</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" id="flameTestGrid">
+                    </div>
+                <div id="flameTestResult" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-center" style="display: none;"></div>
+            </div>
+            
+            <div class="collapsible mt-6">
+                <div class="collapsible-header border-b border-gray-200">
+                    <span>Preparation of Solution for Cation Analysis</span>
+                    <span class="arrow text-xl transition-transform duration-300 ease-in-out transform group-hover:rotate-90">&#x276F;</span>
+                </div>
+                <div class="collapsible-content bg-gray-50 p-4 rounded-b-md">
+                    <p class="text-gray-700">0.1 g of the sample was taken, and a 1 mL sample solution was prepared using the appropriate reagents. The following reagents were investigated in the order indicated to make a solution of the sample:</p>
+                    <ul class="list-decimal mt-2 text-gray-700">
+                        <li>Water at room temperature</li>
+                        <li>Hot water</li>
+                        <li>Dilute HNO₃ / Hot dilute HNO₃</li>
+                        <li>Conc. HNO₃</li>
+                        <li>Dilute HCl / Hot dilute HCl</li>
+                        <li>Conc. HCl</li>
+                        <li>Aqua regia (3 volumes of conc. HCl to 1 volume of conc. HNO₃)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Separation of Cations into Major Groups</h3>
+                <p class="text-gray-700 mb-3">Five drops of the sample solution were subjected to a systematic separation procedure. Click on a group in the diagram below to see its details.</p>
+                <div class="cation-group-diagram p-4 border border-gray-300 rounded-lg bg-gray-50">
+                    <p class="text-center font-medium mb-2">Sample Solution (5 drops)</p>
+                    <div class="text-center mb-2">↓</div>
+                    <div class="flex flex-col items-center">
+                        <div id="group1" class="group-box w-full md:w-3/4 lg:w-1/2 p-3 my-1 border-2 border-blue-400 rounded-md shadow-sm hover:shadow-md transition-shadow">
+                            <strong class="text-blue-600">Group I Precipitates</strong>
+                            <p class="text-sm text-gray-600">PbCl₂, AgCl, Hg₂Cl₂</p>
+                        </div>
+                        <div class="text-center my-1">↓ Solution 2</div>
+                        <div id="group2" class="group-box w-full md:w-3/4 lg:w-1/2 p-3 my-1 border-2 border-green-400 rounded-md shadow-sm hover:shadow-md transition-shadow">
+                            <strong class="text-green-600">Group II Precipitates</strong>
+                            <p class="text-sm text-gray-600">BaSO₄, SrSO₄, CaSO₄</p>
+                        </div>
+                        <div class="text-center my-1">↓ Solution 3</div>
+                        <div id="group3" class="group-box w-full md:w-3/4 lg:w-1/2 p-3 my-1 border-2 border-yellow-400 rounded-md shadow-sm hover:shadow-md transition-shadow">
+                            <strong class="text-yellow-600">Group III Precipitates</strong>
+                            <p class="text-sm text-gray-600">HgS, PbS, Bi₂S₃, CuS, CdS, SbS₃, As₂S₃, SnS₂</p>
+                        </div>
+                        <div class="text-center my-1">↓ Solution 4</div>
+                         <div id="group4" class="group-box w-full md:w-3/4 lg:w-1/2 p-3 my-1 border-2 border-red-400 rounded-md shadow-sm hover:shadow-md transition-shadow">
+                            <strong class="text-red-600">Group IV Precipitates</strong>
+                            <p class="text-sm text-gray-600">Fe(OH)₂, Cr(OH)₃, Al(OH)₃, MnO₂·xH₂O</p>
+                        </div>
+                        <div class="text-center my-1">↓ Solution 5</div>
+                        <div id="group5" class="group-box w-full md:w-3/4 lg:w-1/2 p-3 my-1 border-2 border-purple-400 rounded-md shadow-sm hover:shadow-md transition-shadow">
+                            <strong class="text-purple-600">Group V Precipitates</strong>
+                            <p class="text-sm text-gray-600">CoS, NiS, MnS, ZnS</p>
+                        </div>
+                        <div class="text-center my-1">↓ Solution 6</div>
+                        <div id="group6" class="group-box w-full md:w-3/4 lg:w-1/2 p-3 my-1 border-2 border-gray-400 rounded-md shadow-sm hover:shadow-md transition-shadow">
+                            <strong class="text-gray-600">Group VI Ions (in solution)</strong>
+                            <p class="text-sm text-gray-600">Na⁺, K⁺, Mg²⁺</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="cationGroupDetails" class="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-md text-indigo-700" style="display: none;">
+                    <h4 class="font-semibold text-lg mb-2">Group Details:</h4>
+                    <p id="cationGroupInfoText"></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="anionTestModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle" class="text-2xl font-semibold mb-3"></h3>
+            <div id="modalBody" class="text-gray-700"></div>
+        </div>
+    </div>
+
+    <footer class="text-center py-8 mt-12 border-t border-gray-200">
+        <p class="text-gray-500">&copy; 2025 Interactive Lab Report. All procedures based on provided lab manual.</p>
+    </footer>
+
+    <script>
+        // Collapsible sections
+        const collapsibles = document.querySelectorAll('.collapsible');
+        collapsibles.forEach(collapsible => {
+            const header = collapsible.querySelector('.collapsible-header');
+            const content = collapsible.querySelector('.collapsible-content');
+            const arrow = header.querySelector('.arrow');
+
+            header.addEventListener('click', () => {
+                content.classList.toggle('open');
+                arrow.classList.toggle('open');
+            });
+        });
+
+        // Anion Tests Data
+        const anionTests = [
+            { 
+                name: "Carbonate (CO₃²⁻) and Sulfite (SO₃²⁻)", 
+                detailsHtml: `
+                    <p><strong>Reagents:</strong> Dilute H₂SO₄, Ca(OH)₂ or Ba(OH)₂ solution, acidic K₂Cr₂O₇ paper.</p>
+                    <p class="mt-2"><strong>Procedure:</strong> To the sample in a test tube, add 6 drops of dil. H₂SO₄. Quickly collect the evolved gas into a dropper and bubble into Ca(OH)₂ or Ba(OH)₂ solution. Check the smell. Observe effect on K₂Cr₂O₇ paper.</p>
+                    <p class="mt-2"><strong>Positive Result:</strong></p>
+                    <ul class="list-disc ml-5">
+                        <li><strong>Carbonate (CO₃²⁻):</strong> Ca(OH)₂/Ba(OH)₂ turns milky (↓), gas has no special odor (CO₂ ↑).</li>
+                        <li><strong>Sulfite (SO₃²⁻):</strong> Gas with sharp choking smell (↑), turns acidic K₂Cr₂O₇ paper green (SO₂ ↑).</li>
+                    </ul>`
+            },
+            { 
+                name: "Thiosulfate (S₂O₃²⁻)", 
+                detailsHtml: `
+                    <p><strong>Reagents:</strong> Dilute H₂SO₄.</p>
+                    <p class="mt-2"><strong>Procedure:</strong> To the sample in a test tube, add 6 drops of dil. H₂SO₄.</p>
+                    <p class="mt-2"><strong>Positive Result:</strong> Gas evolves with a sharp choking smell (↑) and a yellow-white deposit (S ↓).</p>`
+            },
+            { 
+                name: "Sulfide (S²⁻)", 
+                detailsHtml: `
+                    <p><strong>Test a)</strong></p>
+                    <p><strong>Reagents:</strong> Lead acetate paper.</p>
+                    <p class="mt-1"><strong>Procedure:</strong> Observe gas evolved from previous tests or by gentle warming if necessary.</p>
+                    <p class="mt-1"><strong>Positive Result:</strong> Gas with rotten egg smell (H₂S ↑), turns lead acetate paper black.</p>
+                    <p class="mt-3"><strong>Test b)</strong></p>
+                    <p><strong>Reagents:</strong> 1% Sodium nitroprusside solution.</p>
+                    <p class="mt-1"><strong>Procedure:</strong> To 4 drops of water/test solution, add 1 drop of 1% sodium nitroprusside.</p>
+                    <p class="mt-1"><strong>Positive Result:</strong> Violet color appears.</p>`
+            },
+            { 
+                name: "Nitrate (NO₃⁻)", 
+                detailsHtml: `
+                    <p><strong>Reagents:</strong> Freshly prepared saturated FeSO₄ solution, Conc. H₂SO₄.</p>
+                    <p class="mt-2"><strong>Procedure:</strong> Dissolve sample (1 rice grain) in 10 drops of water. Add 1 mL fresh FeSO₄ solution. Slowly pour 1 mL conc. H₂SO₄ down the side of the tube.</p>
+                    <p class="mt-2"><strong>Positive Result:</strong> A brown ring forms where the liquids meet.</p>`
+            },
+            { 
+                name: "Sulfate (SO₄²⁻)", 
+                detailsHtml: `
+                    <p><strong>Reagents:</strong> Dilute HCl, 0.2 M BaCl₂ solution.</p>
+                    <p class="mt-2"><strong>Procedure:</strong> Acidify 3 drops of water/test solution with dil. HCl until acidic, then add 4 more drops. Filter if precipitate forms (possible S from thiosulfate). Add 1 drop of 0.2 M BaCl₂ solution.</p>
+                    <p class="mt-2"><strong>Positive Result:</strong> White precipitate (BaSO₄ ↓) indicates sulfate.</p>`
+            },
+            { 
+                name: "Halides (Cl⁻, Br⁻, I⁻) - General Test", 
+                detailsHtml: `
+                    <p><strong>Reagents:</strong> Dilute HNO₃, 0.5 M AgNO₃ solution, dilute NH₃ solution.</p>
+                    <p class="mt-2"><strong>Procedure:</strong> Acidify 5 drops of water/test solution with dil. HNO₃ until acidic to litmus. Add 4 more drops dil. HNO₃ and 10 drops water. Add 4 drops 0.5 M AgNO₃.</p>
+                    <p class="mt-2"><strong>Positive Result:</strong></p>
+                    <ul class="list-disc ml-5">
+                        <li><strong>Chloride (Cl⁻):</strong> White precipitate (AgCl ↓), dissolves in 5 drops dil. NH₃.</li>
+                        <li><strong>Bromide (Br⁻):</strong> Pale-yellow precipitate (AgBr ↓), sparingly dissolves in dil. NH₃.</li>
+                        <li><strong>Iodide (I⁻):</strong> Yellow precipitate (AgI ↓), insoluble in dil. NH₃.</li>
+                    </ul>`
+            },
+             { 
+                name: "Halides - Chlorine Water Test", 
+                detailsHtml: `
+                    <p><strong>Reagents:</strong> Dilute HNO₃, CHCl₃, Chlorine water.</p>
+                    <p class="mt-2"><strong>Procedure:</strong> To 3 drops of water/test solution, add 5 drops water. Acidify with dil. HNO₃. Add 3 drops CHCl₃ and 2-3 drops chlorine water. Shake.</p>
+                    <p class="mt-2"><strong>Positive Result:</strong></p>
+                    <ul class="list-disc ml-5">
+                        <li><strong>Bromide (Br⁻):</strong> Orange globule (Br₂ in CHCl₃).</li>
+                        <li><strong>Iodide (I⁻):</strong> Purple globule (I₂ in CHCl₃).</li>
+                        <li><strong>If both present:</strong> Excess chlorine water makes purple disappear, orange globule (Br₂) visible.</li>
+                    </ul>`
+            },
+            { 
+                name: "Halides - Analysis of Mixture (Cl⁻, Br⁻, I⁻)", 
+                detailsHtml: `
+                    <p><strong>Reagents:</strong> Acetic acid, CHCl₃, 0.2 M KNO₂ solution, Conc. HNO₃, AgNO₃ solution.</p>
+                    <p class="mt-2"><strong>Procedure for Iodide:</strong> Acidify 6 drops water/test solution with acetic acid. Add 4 drops CHCl₃, 2 drops 0.2 M KNO₂. If I₂ present (purple CHCl₃ layer), remove CHCl₃. Repeat with fresh CHCl₃ and KNO₂ until I₂ is removed (colorless CHCl₃ layer).</p>
+                    <p class="mt-2"><strong>Procedure for Bromide:</strong> To remaining aqueous layer, add equal volume conc. HNO₃. Heat in boiling water 30s, cool. Add 2 drops CHCl₃, 3 drops KNO₂. Shake. Yellowish CHCl₃ layer indicates Br⁻. Remove CHCl₃.</p>
+                    <p class="mt-2"><strong>Procedure for Chloride:</strong> Perform AgNO₃ test on remaining aqueous layer for chloride.</p>`
+            }
+        ];
+
+        const anionTestsContainer = document.getElementById('anionTestsContainer');
+        const modal = document.getElementById('anionTestModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+
+        anionTests.forEach(test => {
+            const button = document.createElement('button');
+            button.className = 'test-button p-4 rounded-lg shadow-md text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#688F8F]';
+            button.innerHTML = `<h4 class="font-semibold">${test.name}</h4><p class="text-sm opacity-80">Click to see details</p>`;
+            button.onclick = () => {
+                modalTitle.textContent = test.name;
+                modalBody.innerHTML = test.detailsHtml;
+                modal.style.display = 'block';
+            };
+            anionTestsContainer.appendChild(button);
+        });
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Flame Test
+        const flameTestData = [
+            { colorName: "Yellow Flame", cation: "Na⁺ (Sodium)" },
+            { colorName: "Violet Flame", cation: "K⁺ (Potassium)" },
+            { colorName: "Red Flame", cation: "Li⁺ (Lithium)" },
+            { colorName: "Brick-red Flame", cation: "Ca²⁺ (Calcium)" },
+            { colorName: "Apple-green Flame", cation: "Ba²⁺ (Barium)" },
+            { colorName: "Crimson Flame", cation: "Sr²⁺ (Strontium)" },
+            { colorName: "Green Flame", cation: "Cu²⁺ (Copper)" }
+        ];
+
+        const flameTestGrid = document.getElementById('flameTestGrid');
+        const flameTestResult = document.getElementById('flameTestResult');
+
+        flameTestData.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'flame-grid-item rounded-md';
+            div.textContent = item.colorName;
+            div.onclick = () => {
+                flameTestResult.textContent = `Indicates: ${item.cation}`;
+                flameTestResult.style.display = 'block';
+            };
+            flameTestGrid.appendChild(div);
+        });
+
+        // Cation Group Separation
+        const cationGroups = {
+            group1: { name: "Group I", reagents: "Dilute HCl", ions: "PbCl₂, AgCl, Hg₂Cl₂" },
+            group2: { name: "Group II", reagents: "H₂S in 0.3M HCl (after removing Group I)", ions: "BaSO₄, SrSO₄, CaSO₄ (Note: original doc implies these are from a different scheme, typically Group II sulfides are HgS, PbS, Bi₂S₃, CuS, CdS. The provided diagram is followed here.)" },
+            group3: { name: "Group III", reagents: "H₂S in ammoniacal solution (after removing Group II)", ions: "HgS, PbS, Bi₂S₃, CuS, CdS, SbS₃, As₂S₃, SnS₂ (Note: original doc implies these are from a different scheme, typically Group III hydroxides/sulfides are Al(OH)₃, Cr(OH)₃, Fe(OH)₃, MnS, NiS, CoS, ZnS. The provided diagram is followed here.)" },
+            group4: { name: "Group IV", reagents: "(NH₄)₂CO₃ in presence of NH₄Cl and NH₃ (after removing Group III)", ions: "Fe(OH)₂, Cr(OH)₃, Al(OH)₃, MnO₂·xH₂O (Note: original doc implies these are from a different scheme, typically Group IV are BaCO₃, SrCO₃, CaCO₃. The provided diagram is followed here.)" },
+            group5: { name: "Group V", reagents: "No group reagent - soluble ions", ions: "CoS, NiS, MnS, ZnS (Note: original doc implies these are from a different scheme, typically Group V are Mg²⁺, Na⁺, K⁺, NH₄⁺. The provided diagram is followed here.)" },
+            group6: { name: "Group VI", reagents: "Remaining in solution", ions: "Na⁺, K⁺, Mg²⁺" }
+        };
+        
+        const cationGroupDetailsDiv = document.getElementById('cationGroupDetails');
+        const cationGroupInfoText = document.getElementById('cationGroupInfoText');
+        const groupBoxes = document.querySelectorAll('.cation-group-diagram .group-box');
+
+        groupBoxes.forEach(box => {
+            box.addEventListener('click', function() {
+                // Remove highlight from all boxes
+                groupBoxes.forEach(b => b.classList.remove('highlighted-group'));
+                // Add highlight to clicked box
+                this.classList.add('highlighted-group');
+
+                const groupId = this.id;
+                const groupData = cationGroups[groupId];
+                if (groupData) {
+                    cationGroupInfoText.innerHTML = `<strong>${groupData.name} Details:</strong><br>
+                        Precipitating Reagent (Typical): ${groupData.reagents}<br>
+                        Ions Precipitated/Present: ${groupData.ions}`;
+                    cationGroupDetailsDiv.style.display = 'block';
+                } else {
+                    cationGroupDetailsDiv.style.display = 'none';
+                }
+            });
+        });
+
+        // Smooth scrolling for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if(targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
