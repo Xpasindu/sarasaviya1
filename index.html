@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -16,10 +18,34 @@
         .hero-background {
             background: linear-gradient(to right, #e0f2fe, #f0f9ff); /* Light blue to very light blue */
         }
-        /* Custom background for the right side of the hero section */
+        /* Custom background for the right side of the hero section - not used in current design, but kept for reference */
         .hero-right-bg {
             background: linear-gradient(to bottom right, #6366f1, #a855f7); /* Indigo to Purple */
             clip-path: polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%);
+        }
+        /* Keyframe animations for blob effect */
+        @keyframes blob {
+            0% {
+                transform: translate(0px, 0px) scale(1);
+            }
+            33% {
+                transform: translate(30px, -50px) scale(1.1);
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+            100% {
+                transform: translate(0px, 0px) scale(1);
+            }
+        }
+        .animate-blob {
+            animation: blob 7s infinite cubic-bezier(0.6, 0.01, 0.3, 1);
+        }
+        .animation-delay-2000 {
+            animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+            animation-delay: 4s;
         }
     </style>
 </head>
@@ -56,7 +82,7 @@
             <!-- Mobile menu button (Hamburger icon) -->
             <button class="md:hidden text-gray-600 hover:text-indigo-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
         </div>
@@ -118,6 +144,105 @@
             </div>
         </div>
     </header>
+
+    <!-- Our Top Categories Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
+            <p class="text-indigo-600 font-semibold uppercase text-sm mb-2">--- OUR TOP CATEGORIES ---</p>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-12">Browse Learn Skills You Need</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+                <!-- Category Card 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
+                    <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-indigo-300">
+                        <i class="fas fa-laptop-code text-indigo-600 text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Web Developer</h3>
+                    <p class="text-gray-500 text-sm">32 Course</p>
+                </div>
+                <!-- Category Card 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
+                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-blue-300">
+                        <i class="fas fa-book-open text-blue-600 text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Basic English</h3>
+                    <p class="text-gray-500 text-sm">39 Course</p>
+                </div>
+                <!-- Category Card 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
+                    <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-green-300">
+                        <i class="fab fa-java text-green-600 text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Java Script</h3>
+                    <p class="text-gray-500 text-sm">32 Course</p>
+                </div>
+                <!-- Category Card 4 -->
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
+                    <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-purple-300">
+                        <i class="fas fa-code text-purple-600 text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Tech & Coding</h3>
+                    <p class="text-gray-500 text-sm">32 Course</p>
+                </div>
+                <!-- Category Card 5 -->
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
+                    <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-red-300">
+                        <i class="fas fa-headset text-red-600 text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-1">IT Service</h3>
+                    <p class="text-gray-500 text-sm">32 Course</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Education Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 flex flex-col lg:flex-row items-center justify-between gap-12">
+            <!-- Left Image with Experience Badge -->
+            <div class="lg:w-1/2 relative">
+                <div class="absolute inset-0 bg-yellow-400 rounded-xl transform -rotate-3 translate-x-2 translate-y-2 z-0"></div>
+                <img
+                    src="https://placehold.co/600x400/4f46e5/ffffff?text=Student+Learning"
+                    alt="Student learning in library"
+                    class="relative z-10 w-full h-auto rounded-xl shadow-lg"
+                >
+                <div class="absolute bottom-4 left-4 bg-indigo-600 text-white p-4 rounded-xl shadow-lg flex items-center space-x-2 z-20">
+                    <span class="text-3xl font-bold">43</span>
+                    <span class="text-lg font-medium leading-tight">Years Of <br> Experience</span>
+                </div>
+            </div>
+
+            <!-- Right Content -->
+            <div class="lg:w-1/2 text-center lg:text-left">
+                <p class="text-indigo-600 font-semibold uppercase text-sm mb-2">GLOBAL EDUCATION</p>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-6">
+                    Teach Students <span class="text-indigo-600">Form</span> Over 18 Countrie
+                </h2>
+                <p class="text-gray-600 text-lg mb-6">
+                    Ducamb Welcomed Every Pain Avoided But In Certa Instances Owing To The Claims Of Igation That Off Bu Will Frequently Occuthe
+                </p>
+                <ul class="space-y-3 mb-8 text-gray-700">
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
+                        <span>Steady stream of new students</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
+                        <span>Smart calendar</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
+                        <span>Interactive classroom</span>
+                    </li>
+                </ul>
+                <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out flex items-center justify-center lg:inline-flex">
+                    Get More Info
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </section>
 
 </body>
 </html>
