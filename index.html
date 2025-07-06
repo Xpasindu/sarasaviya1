@@ -1,248 +1,499 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Educino - Online Education Platform</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Custom gradient for the hero section background */
-        .hero-background {
-            background: linear-gradient(to right, #e0f2fe, #f0f9ff); /* Light blue to very light blue */
-        }
-        /* Custom background for the right side of the hero section - not used in current design, but kept for reference */
-        .hero-right-bg {
-            background: linear-gradient(to bottom right, #6366f1, #a855f7); /* Indigo to Purple */
-            clip-path: polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%);
-        }
-        /* Keyframe animations for blob effect */
-        @keyframes blob {
-            0% {
-                transform: translate(0px, 0px) scale(1);
-            }
-            33% {
-                transform: translate(30px, -50px) scale(1.1);
-            }
-            66% {
-                transform: translate(-20px, 20px) scale(0.9);
-            }
-            100% {
-                transform: translate(0px, 0px) scale(1);
-            }
-        }
-        .animate-blob {
-            animation: blob 7s infinite cubic-bezier(0.6, 0.01, 0.3, 1);
-        }
-        .animation-delay-2000 {
-            animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-            animation-delay: 4s;
-        }
-    </style>
-</head>
-<body class="bg-white">
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
-    <!-- Navigation Bar -->
-    <nav class="bg-white shadow-sm py-4 px-6 md:px-12 lg:px-24 flex justify-between items-center rounded-b-lg">
-        <!-- Logo -->
-        <div class="flex items-center space-x-2">
-            <img src="https://placehold.co/40x40/4f46e5/ffffff?text=E" alt="Educino Logo" class="rounded-full">
-            <span class="text-2xl font-bold text-indigo-700">Educino</span>
-        </div>
+// Create a context for Firebase services and user data
+const AppContext = createContext(null);
 
-        <!-- Navigation Links (Hidden on small screens, shown on medium and up) -->
-        <div class="hidden md:flex items-center space-x-8">
-            <a href="#" class="text-gray-600 hover:text-indigo-600 font-medium">Demos <span class="ml-1">&#9662;</span></a>
-            <a href="#" class="text-gray-600 hover:text-indigo-600 font-medium">About Us</a>
-            <a href="#" class="text-gray-600 hover:text-indigo-600 font-medium">Courses <span class="ml-1">&#9662;</span></a>
-            <a href="#" class="text-gray-600 hover:text-indigo-600 font-medium">Tutor <span class="ml-1">&#9662;</span></a>
-            <a href="#" class="text-gray-600 hover:text-indigo-600 font-medium">Pages <span class="ml-1">&#9662;</span></a>
-            <a href="#" class="text-gray-600 hover:text-indigo-600 font-medium">Contact Us</a>
-        </div>
+const AppProvider = ({ children }) => {
+  const [app, setApp] = useState(null);
+  const [db, setDb] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [userId, setUserId] = useState(null);
 
-        <!-- Search Icon and Find Program Button -->
-        <div class="flex items-center space-x-4">
-            <button class="text-gray-600 hover:text-indigo-600 hidden md:block">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+  useEffect(() => {
+    try {
+      // Initialize Firebase
+      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+      const initializedApp = initializeApp(firebaseConfig);
+      const firestoreDb = getFirestore(initializedApp);
+      const firebaseAuth = getAuth(initializedApp);
+
+      setApp(initializedApp);
+      setDb(firestoreDb);
+      setAuth(firebaseAuth);
+
+      // Sign in with custom token or anonymously
+      const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+      const signInUser = async () => {
+        try {
+          if (initialAuthToken) {
+            await signInWithCustomToken(firebaseAuth, initialAuthToken);
+          } else {
+            await signInAnonymously(firebaseAuth);
+          }
+        } catch (error) {
+          console.error("Firebase authentication error:", error);
+          // Fallback to anonymous sign-in if custom token fails
+          await signInAnonymously(firebaseAuth);
+        }
+      };
+
+      signInUser();
+
+      // Listen for auth state changes
+      const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+        setCurrentUser(user);
+        setUserId(user ? user.uid : crypto.randomUUID()); // Use UID if authenticated, else a random ID
+        setIsAuthReady(true);
+      });
+
+      // Cleanup subscription on unmount
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Failed to initialize Firebase:", error);
+    }
+  }, []);
+
+  return (
+    <AppContext.Provider value={{ app, db, auth, currentUser, isAuthReady, userId }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+// Custom hook to use Firebase services
+const useFirebase = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useFirebase must be used within an AppProvider');
+  }
+  return context;
+};
+
+
+// Component for the sign-in page
+const SignInPage = ({ onSignInSuccess }) => {
+  const { auth, db, isAuthReady, userId } = useFirebase();
+  const [fullName, setFullName] = useState('');
+  const [universityName, setUniversityName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [message, setMessage] = useState('');
+  const [showModal, setShowModal] = useState(false);
+
+  // Function to show a message modal instead of alert
+  const showMessageModal = (msg) => {
+    setMessage(msg);
+    setShowModal(true);
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    if (!isAuthReady || !auth || !db) {
+      showMessageModal("Firebase not ready. Please try again.");
+      return;
+    }
+
+    setMessage(''); // Clear previous messages
+
+    try {
+      let userCredential;
+      if (isRegistering) {
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Save user details to Firestore after successful registration
+        const userDocRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userCredential.user.uid}/user_data`, 'profile');
+        await setDoc(userDocRef, {
+          fullName,
+          universityName,
+          email,
+          createdAt: new Date(),
+          userId: userCredential.user.uid // Store the Firebase UID
+        });
+        showMessageModal('Registration successful! You are now signed in.');
+      } else {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        showMessageModal('Sign in successful!');
+      }
+      onSignInSuccess(userCredential.user);
+    } catch (error) {
+      console.error("Authentication error:", error);
+      let errorMessage = "An error occurred. Please try again.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Try signing in or use a different email.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters.';
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = 'Invalid email or password.';
+      }
+      showMessageModal(errorMessage);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-100 p-4 font-inter">
+      {/* Modal for messages */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <p className="text-lg font-semibold mb-4">{message}</p>
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+            >
+              OK
             </button>
-            <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-full shadow-md transition duration-300 ease-in-out">
-                Find Program
+          </div>
+        </div>
+      )}
+
+      {/* Left Section: Info */}
+      <div className="md:w-1/2 w-full flex flex-col items-center md:items-start text-center md:text-left p-8">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 leading-tight">
+          Online Tutoring <span className="text-blue-600">Made Simple.</span>
+        </h1>
+        <p className="text-lg text-gray-600 mb-8 max-w-md">
+          Teach online and connect with students all over the world.
+        </p>
+        {/* Sign-in Box */}
+        <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+            {isRegistering ? 'Register' : 'Sign In'}
+          </h2>
+          <form onSubmit={handleAuth} className="space-y-4">
+            {isRegistering && (
+              <>
+                <div>
+                  <label htmlFor="fullName" className="sr-only">Full Name</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={isRegistering}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="universityName" className="sr-only">University/School Name</label>
+                  <input
+                    type="text"
+                    id="universityName"
+                    placeholder="University/School Name"
+                    value={universityName}
+                    onChange={(e) => setUniversityName(e.target.value)}
+                    required={isRegistering}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label htmlFor="email" className="sr-only">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="sr-only">Password</label>
+              <input
+                type="password"
+                id="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 shadow-md"
+            >
+              {isRegistering ? 'Register & Sign In' : 'Sign In'}
             </button>
-            <!-- Mobile menu button (Hamburger icon) -->
-            <button class="md:hidden text-gray-600 hover:text-indigo-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+          </form>
+          <button
+            onClick={() => setIsRegistering(!isRegistering)}
+            className="mt-4 w-full text-blue-600 hover:underline text-sm"
+          >
+            {isRegistering ? 'Already have an account? Sign In' : 'Don\'t have an account? Register'}
+          </button>
+        </div>
+      </div>
+
+      {/* Right Section: Image */}
+      <div className="md:w-1/2 w-full flex justify-center items-center p-8 mt-8 md:mt-0">
+        <div className="relative w-full max-w-lg">
+          <img
+            src="https://placehold.co/600x400/E0F2F7/000000?text=Online+Tutoring" // Placeholder image
+            alt="Online Tutoring"
+            className="rounded-xl shadow-lg w-full h-auto object-cover"
+            onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/600x400/E0F2F7/000000?text=Image+Not+Found"; }}
+          />
+          <div className="absolute bottom-4 right-4 bg-purple-800 text-white p-4 rounded-xl shadow-lg transform translate-y-1/4 translate-x-1/4 md:translate-y-1/2 md:translate-x-1/2">
+            <h3 className="text-xl font-semibold mb-2">Online tuition</h3>
+            <p className="text-sm mb-3">Click to start your journey</p>
+            <button className="bg-white text-purple-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-colors">
+              Meet your form Tutor
             </button>
+          </div>
         </div>
-    </nav>
+      </div>
+    </div>
+  );
+};
 
-    <!-- Hero Section -->
-    <header class="relative hero-background min-h-[calc(100vh-80px)] flex items-center overflow-hidden rounded-b-lg">
-        <div class="container mx-auto px-6 md:px-12 lg:px-24 py-16 flex flex-col lg:flex-row items-center justify-between">
-            <!-- Left Content -->
-            <div class="lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0 relative z-10">
-                <p class="text-indigo-600 font-semibold text-sm uppercase tracking-wider mb-4">
-                    <span class="inline-block bg-indigo-100 text-indigo-600 rounded-full px-3 py-1 text-xs mr-2">
-                        &#10003;
-                    </span> 100% TEACH ONLINE
-                </p>
-                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
-                    Online <span class="text-indigo-600">Platform</span> Education
-                </h1>
-                <p class="text-gray-600 text-lg md:text-xl mb-8 max-w-lg mx-auto lg:mx-0">
-                    Teach Online And Connect With Students All Over Into The World Simple
-                </p>
-                <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
-                    <input
-                        type="text"
-                        placeholder="Find your course..."
-                        class="w-full sm:w-auto flex-grow px-6 py-3 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-300 ease-in-out"
-                    />
-                    <button class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out">
-                        FIND COURSE
-                    </button>
-                </div>
-                <!-- Pagination Dots -->
-                <div class="flex justify-center lg:justify-start mt-8 space-x-2">
-                    <span class="block w-3 h-3 bg-orange-400 rounded-full"></span>
-                    <span class="block w-3 h-3 bg-gray-300 rounded-full"></span>
-                    <span class="block w-3 h-3 bg-gray-300 rounded-full"></span>
-                </div>
+// Component for the dashboard page
+const DashboardPage = ({ onSignOut }) => {
+  const { currentUser, db, isAuthReady, userId } = useFirebase();
+  const [activeTab, setActiveTab] = useState('Home');
+  const [userData, setUserData] = useState(null);
+  const [message, setMessage] = useState('');
+  const [showModal, setShowModal] = useState(false);
+
+  // Function to show a message modal instead of alert
+  const showMessageModal = (msg) => {
+    setMessage(msg);
+    setShowModal(true);
+  };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isAuthReady && currentUser && db) {
+        try {
+          const userDocRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${currentUser.uid}/user_data`, 'profile');
+          const docSnap = await getDoc(userDocRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data());
+          } else {
+            console.log("No user data found for this user!");
+            showMessageModal("User profile data not found.");
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          showMessageModal("Error fetching user data.");
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [isAuthReady, currentUser, db]);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'Home':
+        return (
+          <div className="p-8 text-center">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Welcome, {userData?.fullName || 'User'}!</h2>
+            <p className="text-lg text-gray-600">Your User ID: <span className="font-mono bg-gray-200 p-1 rounded">{userId}</span></p>
+            <p className="text-lg text-gray-600 mt-2">We are glad to have you back.</p>
+            <p className="text-md text-gray-500 mt-4">This is your personalized dashboard.</p>
+          </div>
+        );
+      case 'Services':
+        return (
+          <div className="p-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Our Services</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Service Card 1 */}
+              <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center">
+                <div className="text-blue-600 text-5xl mb-4">💡</div> {/* Icon */}
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Web Development</h3>
+                <p className="text-gray-600">Learn to build modern and responsive websites.</p>
+              </div>
+              {/* Service Card 2 */}
+              <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center">
+                <div className="text-blue-600 text-5xl mb-4">🎓</div> {/* Icon */}
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Basic English</h3>
+                <p className="text-gray-600">Improve your English language skills for academic and professional success.</p>
+              </div>
+              {/* Service Card 3 */}
+              <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center">
+                <div className="text-blue-600 text-5xl mb-4">💻</div> {/* Icon */}
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Java Script</h3>
+                <p className="text-gray-600">Master JavaScript for interactive web applications.</p>
+              </div>
+              {/* Service Card 4 */}
+              <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center">
+                <div className="text-blue-600 text-5xl mb-4">✍️</div> {/* Icon */}
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Tech & Coding</h3>
+                <p className="text-gray-600">Explore various tech concepts and coding practices.</p>
+              </div>
+              {/* Service Card 5 */}
+              <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center">
+                <div className="text-blue-600 text-5xl mb-4">🌐</div> {/* Icon */}
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">IT Service</h3>
+                <p className="text-gray-600">Comprehensive IT support and solutions for your needs.</p>
+              </div>
             </div>
+          </div>
+        );
+      case 'Profile':
+        return (
+          <div className="p-8 text-center">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Your Profile</h2>
+            {userData ? (
+              <div className="bg-white p-6 rounded-xl shadow-lg inline-block text-left">
+                <p className="text-lg text-gray-700 mb-2"><strong>Full Name:</strong> {userData.fullName}</p>
+                <p className="text-lg text-gray-700 mb-2"><strong>University/School:</strong> {userData.universityName}</p>
+                <p className="text-lg text-gray-700 mb-2"><strong>Email:</strong> {userData.email}</p>
+                <p className="text-lg text-gray-700 mb-2"><strong>User ID:</strong> {userData.userId}</p>
+              </div>
+            ) : (
+              <p className="text-lg text-gray-600">Loading profile data...</p>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
-            <!-- Right Image Section -->
-            <div class="lg:w-1/2 relative flex justify-center lg:justify-end">
-                <!-- Abstract shapes in the background -->
-                <div class="absolute -bottom-10 -right-10 w-64 h-64 bg-yellow-400 opacity-70 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-                <div class="absolute top-0 right-0 w-80 h-80 bg-blue-500 opacity-70 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-                <div class="absolute -bottom-20 left-20 w-72 h-72 bg-purple-500 opacity-70 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
-
-                <!-- Main image with a subtle shadow -->
-                <img
-                    src="https://placehold.co/500x500/cbd5e1/475569?text=Student"
-                    alt="Student with books"
-                    class="relative z-10 w-full max-w-md lg:max-w-lg h-auto rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-500 ease-in-out"
-                >
-                <!-- Decorative arrow -->
-                <div class="absolute top-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 rotate-45 text-red-500 opacity-80 z-20">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 md:h-24 md:w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4-4m0 0l-4-4m4 4H3" />
-                    </svg>
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-100 font-inter flex flex-col">
+      {/* Modal for messages */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <p className="text-lg font-semibold mb-4">{message}</p>
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+            >
+              OK
+            </button>
+          </div>
         </div>
-    </header>
+      )}
 
-    <!-- Our Top Categories Section -->
-    <section class="py-16 bg-gray-50">
-        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
-            <p class="text-indigo-600 font-semibold uppercase text-sm mb-2">--- OUR TOP CATEGORIES ---</p>
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-12">Browse Learn Skills You Need</h2>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-                <!-- Category Card 1 -->
-                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
-                    <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-indigo-300">
-                        <i class="fas fa-laptop-code text-indigo-600 text-3xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Web Developer</h3>
-                    <p class="text-gray-500 text-sm">32 Course</p>
-                </div>
-                <!-- Category Card 2 -->
-                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
-                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-blue-300">
-                        <i class="fas fa-book-open text-blue-600 text-3xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Basic English</h3>
-                    <p class="text-gray-500 text-sm">39 Course</p>
-                </div>
-                <!-- Category Card 3 -->
-                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
-                    <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-green-300">
-                        <i class="fab fa-java text-green-600 text-3xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Java Script</h3>
-                    <p class="text-gray-500 text-sm">32 Course</p>
-                </div>
-                <!-- Category Card 4 -->
-                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
-                    <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-purple-300">
-                        <i class="fas fa-code text-purple-600 text-3xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Tech & Coding</h3>
-                    <p class="text-gray-500 text-sm">32 Course</p>
-                </div>
-                <!-- Category Card 5 -->
-                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col items-center justify-center border border-dashed border-gray-300">
-                    <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-red-300">
-                        <i class="fas fa-headset text-red-600 text-3xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-800 mb-1">IT Service</h3>
-                    <p class="text-gray-500 text-sm">32 Course</p>
-                </div>
-            </div>
+      {/* Top Navigation Bar */}
+      <nav className="bg-white shadow-md p-4 flex justify-between items-center flex-wrap">
+        <div className="flex items-center space-x-4">
+          <img src="https://placehold.co/40x40/000000/FFFFFF?text=Logo" alt="Logo" className="rounded-full" />
+          <span className="text-xl font-bold text-gray-800">EduCino</span>
         </div>
-    </section>
-
-    <!-- Global Education Section -->
-    <section class="py-16 bg-white">
-        <div class="container mx-auto px-6 md:px-12 lg:px-24 flex flex-col lg:flex-row items-center justify-between gap-12">
-            <!-- Left Image with Experience Badge -->
-            <div class="lg:w-1/2 relative">
-                <div class="absolute inset-0 bg-yellow-400 rounded-xl transform -rotate-3 translate-x-2 translate-y-2 z-0"></div>
-                <img
-                    src="https://placehold.co/600x400/4f46e5/ffffff?text=Student+Learning"
-                    alt="Student learning in library"
-                    class="relative z-10 w-full h-auto rounded-xl shadow-lg"
-                >
-                <div class="absolute bottom-4 left-4 bg-indigo-600 text-white p-4 rounded-xl shadow-lg flex items-center space-x-2 z-20">
-                    <span class="text-3xl font-bold">43</span>
-                    <span class="text-lg font-medium leading-tight">Years Of <br> Experience</span>
-                </div>
-            </div>
-
-            <!-- Right Content -->
-            <div class="lg:w-1/2 text-center lg:text-left">
-                <p class="text-indigo-600 font-semibold uppercase text-sm mb-2">GLOBAL EDUCATION</p>
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-6">
-                    Teach Students <span class="text-indigo-600">Form</span> Over 18 Countrie
-                </h2>
-                <p class="text-gray-600 text-lg mb-6">
-                    Ducamb Welcomed Every Pain Avoided But In Certa Instances Owing To The Claims Of Igation That Off Bu Will Frequently Occuthe
-                </p>
-                <ul class="space-y-3 mb-8 text-gray-700">
-                    <li class="flex items-center">
-                        <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
-                        <span>Steady stream of new students</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
-                        <span>Smart calendar</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
-                        <span>Interactive classroom</span>
-                    </li>
-                </ul>
-                <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out flex items-center justify-center lg:inline-flex">
-                    Get More Info
-                    <i class="fas fa-arrow-right ml-2"></i>
-                </button>
-            </div>
+        <div className="flex space-x-4 mt-2 md:mt-0">
+          {['Home', 'Services', 'Profile'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-md font-semibold transition-colors ${
+                activeTab === tab
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
-    </section>
+        <button
+          onClick={onSignOut}
+          className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors mt-2 md:mt-0"
+        >
+          Sign Out
+        </button>
+      </nav>
 
-</body>
-</html>
+      {/* Main Content Area */}
+      <main className="flex-grow container mx-auto p-4">
+        {renderContent()}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white p-4 text-center mt-8">
+        <p>&copy; 2025 EduCino. All rights reserved.</p>
+      </footer>
+    </div>
+  );
+};
+
+// New component to hold the main application logic that uses the Firebase context
+const AppContent = () => {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const { auth, isAuthReady } = useFirebase();
+
+  useEffect(() => {
+    if (isAuthReady && auth) {
+      // Check initial auth state
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setIsSignedIn(true);
+        } else {
+          setIsSignedIn(false);
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [isAuthReady, auth]);
+
+  const handleSignInSuccess = (user) => {
+    setIsSignedIn(true);
+  };
+
+  const handleSignOut = async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+        setIsSignedIn(false);
+      } catch (error) {
+        console.error("Error signing out:", error);
+      }
+    }
+  };
+
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 font-inter">
+        <div className="text-xl text-gray-700">Loading application...</div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {isSignedIn ? (
+        <DashboardPage onSignOut={handleSignOut} />
+      ) : (
+        <SignInPage onSignInSuccess={handleSignInSuccess} />
+      )}
+    </>
+  );
+};
+
+// Main App component
+const App = () => {
+  return (
+    <AppProvider> {/* Wrap the entire application with AppProvider */}
+      <div className="min-h-screen">
+        <style>
+          {`
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+            body {
+              font-family: 'Inter', sans-serif;
+            }
+          `}
+        </style>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <AppContent /> {/* Render the actual application content here */}
+      </div>
+    </AppProvider>
+  );
+};
+
+export default App;
